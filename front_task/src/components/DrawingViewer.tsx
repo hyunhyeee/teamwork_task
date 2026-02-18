@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
-import type { AppDrawing } from '../types/drawing';
+import type { AppDrawing, Revision } from '../types/drawing';
+import { RevisionHistory } from './RevisionHistory';
 
 interface Props {
   drawings: AppDrawing[];
   isCompareMode: boolean;
+  revisionHistory: Revision[];
+  primaryDrawing: AppDrawing | null; // Added primaryDrawing prop
 }
 
-export const DrawingViewer = ({ drawings, isCompareMode }: Props) => {
+export const DrawingViewer = ({ drawings, isCompareMode, revisionHistory, primaryDrawing }: Props) => {
   const [zoomLevel, setZoomLevel] = useState(1); // Global zoom level for the viewer
 
   const toggleGlobalZoom = () => {
-    setZoomLevel((prevZoom) => (prevZoom === 1 ? 1.2 : 1)); // Toggle between 1x and 1.5x zoom
+    setZoomLevel((prevZoom) => (prevZoom === 1 ? 1.5 : 1)); // Toggle between 1x and 1.5x zoom
   };
 
   if (drawings.length === 0) {
@@ -21,10 +24,21 @@ export const DrawingViewer = ({ drawings, isCompareMode }: Props) => {
     );
   }
 
-  const renderDrawing = (d: AppDrawing) => {
+  // renderDrawing function accepts displayWidth
+  const renderDrawing = (d: AppDrawing, displayWidth: string = '100%') => {
     const imageUrl = `/data/drawings/${d.imageFile}`;
     return (
-      <div style={{ flex: 1, textAlign: 'center', display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+      <div
+        style={{
+          flex: 'none', // Prevent flex: 1 from expanding indefinitely
+          width: displayWidth, // Explicitly set width
+          textAlign: 'center',
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
+          overflow: 'hidden', // Main container for the drawing
+        }}
+      >
         <h3 style={{ margin: '10px 0' }}>{d.name}</h3>
         <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', height: 'calc(100% - 50px)', overflow: 'hidden' }}>
             <img
@@ -37,8 +51,8 @@ export const DrawingViewer = ({ drawings, isCompareMode }: Props) => {
     );
   };
 
-  // Content to be zoomed
-  let contentToZoom;
+  // Main drawing content (without the revision history sidebar)
+  let mainDrawingContent;
   if (isCompareMode && drawings.length > 0) {
     const rows = [];
     let currentRow = [];
@@ -52,55 +66,64 @@ export const DrawingViewer = ({ drawings, isCompareMode }: Props) => {
 
     const rowHeight = rows.length === 1 ? '100%' : '50%';
 
-    contentToZoom = (
+    mainDrawingContent = (
       <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%' }}>
         {rows.map((row, rowIndex) => (
-          <div key={rowIndex} style={{ display: 'flex', flex: 1, width: '100%', height: rowHeight, overflow: 'hidden' }}>
-            {row.map((d, colIndex) => (
-              <React.Fragment key={d.id}>
-                {renderDrawing(d)}
-                {colIndex < row.length - 1 && <div style={{ width: '1px', backgroundColor: '#ddd', height: '100%' }} />}
-              </React.Fragment>
-            ))}
+          <div key={rowIndex} style={{ display: 'flex', flex: 1, width: '100%', height: rowHeight, overflow: 'hidden', justifyContent: 'center' }}>
+            {row.map((d, colIndex) => {
+              const drawingWidth = row.length === 1 ? '100%' : '50%';
+              return (
+                <React.Fragment key={d.id}>
+                  {renderDrawing(d, drawingWidth)}
+                  {colIndex < row.length - 1 && <div style={{ width: '1px', backgroundColor: '#ddd', height: '100%' }} />}
+                </React.Fragment>
+              );
+            })}
           </div>
         ))}
       </div>
     );
   } else if (drawings.length > 0) {
-    contentToZoom = (
-      <div style={{ width: '100%', height: '100%', textAlign: 'center', display: 'flex', flexDirection: 'column' }}>
-        {renderDrawing(drawings[0])}
+    mainDrawingContent = (
+      <div style={{ width: '100%', height: '100%', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        {renderDrawing(drawings[0], '100%')}
       </div>
     );
   } else {
-    contentToZoom = null; // Should be handled by initial check, but for safety
+    mainDrawingContent = null;
   }
 
   return (
-    <div
-      style={{
-        width: '100%',
-        height: '100%',
-        overflow: 'auto', // Allow panning when zoomed
-        cursor: zoomLevel === 1 ? 'zoom-in' : 'zoom-out', // Indicate zoomable state
-      }}
-      onDoubleClick={toggleGlobalZoom}
-    >
+    <div style={{ display: 'flex', width: '100%', height: '100%', overflow: 'hidden' }}> {/* Outer flex container for main content + sidebar */}
       <div
         style={{
-          width: '100%',
-          height: '100%', // This will be stretched by minWidth/minHeight
-          transform: `scale(${zoomLevel})`,
-          transformOrigin: 'top left', // Zoom from top-left corner for consistent panning
-          transition: 'transform 0.2s ease-in-out', // Smooth zoom transition
-          display: 'flex', // Ensure content inside also uses flex layout
-          flexDirection: 'column',
-          // These ensure the transformed content's container expands to allow proper overflow
-          minWidth: zoomLevel === 1 ? 'initial' : `${zoomLevel * 100}%`,
-          minHeight: zoomLevel === 1 ? 'initial' : `${zoomLevel * 100}%`,
+          flex: 1, // Main drawing area takes remaining space
+          height: '100%',
+          overflow: 'auto', // Allow panning when zoomed
+          cursor: zoomLevel === 1 ? 'zoom-in' : 'zoom-out', // Indicate zoomable state
         }}
+        onDoubleClick={toggleGlobalZoom}
       >
-        {contentToZoom}
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            transform: `scale(${zoomLevel})`,
+            transformOrigin: 'top left',
+            transition: 'transform 0.2s ease-in-out',
+            display: 'flex',
+            flexDirection: 'column',
+            minWidth: zoomLevel === 1 ? 'initial' : `${zoomLevel * 100}%`,
+            minHeight: zoomLevel === 1 ? 'initial' : `${zoomLevel * 100}%`,
+          }}
+        >
+          {mainDrawingContent}
+        </div>
+      </div>
+      
+      {/* Fixed Revision History Sidebar */}
+      <div style={{ flex: '0 0 300px', height: '100%', borderLeft: '1px solid #ddd', overflowY: 'auto' }}>
+        <RevisionHistory revisions={revisionHistory} primaryDrawing={primaryDrawing} />
       </div>
     </div>
   );

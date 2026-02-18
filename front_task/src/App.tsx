@@ -4,7 +4,7 @@ import { DisciplineSelector } from './components/DisciplineSelector';
 import { DrawingList } from './components/DrawingList';
 import { DrawingViewer } from './components/DrawingViewer';
 import { ContextHeader } from './components/ContextHeader';
-import type { AppDrawing } from './types/drawing';
+import type { AppDrawing, DrawingMeta, DisciplineData } from './types/drawing';
 
 const ALL_DISCIPLINES = '전체';
 
@@ -12,7 +12,7 @@ function App() {
   const processedData = useMetadata();
 
   const [selectedDiscipline, setSelectedDiscipline] =
-    useState<string>(ALL_DISCIPLINES); // Default to "전체"
+    useState<string>(ALL_DISCIPLINES);
   const [selectedDrawingIds, setSelectedDrawingIds] = useState<string[]>([]);
   const [isCompareMode, setIsCompareMode] = useState<boolean>(false);
 
@@ -37,9 +37,35 @@ function App() {
       .filter((drawing): drawing is AppDrawing => drawing !== undefined);
   }, [processedData, selectedDrawingIds]);
 
+  const primaryDrawing = allSelectedDrawingObjs[0] || null;
+
+  const revisionHistory = useMemo(() => {
+    if (!processedData || !primaryDrawing || !processedData.rawMetadata) return [];
+
+    const rawDrawings = processedData.rawMetadata.drawings;
+    const fullDrawingMeta: DrawingMeta | undefined = Object.values(rawDrawings).find(
+      (d: DrawingMeta) => d.id === primaryDrawing.drawingId
+    );
+
+    if (fullDrawingMeta && fullDrawingMeta.disciplines) {
+      const disciplineData: DisciplineData | undefined = fullDrawingMeta.disciplines[primaryDrawing.discipline];
+      if (disciplineData && disciplineData.revisions) {
+        return disciplineData.revisions;
+      }
+      if (disciplineData && disciplineData.regions) {
+        for (const regionKey in disciplineData.regions) {
+          const region = disciplineData.regions[regionKey];
+          if (region && region.revisions) {
+            return region.revisions;
+          }
+        }
+      }
+    }
+    return [];
+  }, [processedData, primaryDrawing]);
+
   const handleToggleCompareMode = () => {
     setIsCompareMode((prev) => {
-      // If turning off compare mode, reset the comparison drawings to only the first one
       if (prev) {
         setSelectedDrawingIds((currentIds) => currentIds.slice(0, 1));
       }
@@ -48,8 +74,6 @@ function App() {
   };
 
   if (!processedData) return <div>Loading metadata...</div>;
-
-  const primaryDrawing = allSelectedDrawingObjs[0] || null;
 
   return (
     <div style={{ width: '100%' }}>
@@ -61,30 +85,28 @@ function App() {
       />
 
       <div style={{
-        marginTop: '60px', // Corrected: Space for the fixed header
-        height: 'calc(100vh - 60px)', // Added: Remaining height
+        marginTop: '60px',
+        height: 'calc(100vh - 60px)',
         display: 'flex',
       }}>
-        <div style={{ // This is the overall sidebar container
-          width: 250, // Corrected: Fixed width for the sidebar, as discussed
+        <div style={{
+          width: 250,
           borderRight: '1px solid #ddd',
           display: 'flex',
           flexDirection: 'column',
         }}>
-          {/* Discipline Selector Section */}
-          <div style={{ padding: 16, paddingBottom: 0 }}> {/* Top padding */}
+          <div style={{ padding: 16, paddingBottom: 0 }}>
             <DisciplineSelector
               disciplines={disciplines}
               selected={selectedDiscipline}
               onSelect={(name) => {
                 setSelectedDiscipline(name);
-                setSelectedDrawingIds([]); // Clear selections when discipline changes
+                setSelectedDrawingIds([]);
               }}
             />
           </div>
 
-          {/* Drawing List Section (scrollable) */}
-          <div style={{ flex: 1, padding: 16, paddingTop: 0, overflowY: 'auto' }}> {/* Bottom padding, scrollable */}
+          <div style={{ flex: 1, padding: 16, paddingTop: 0, overflowY: 'auto' }}>
             <DrawingList
               drawings={filteredDrawings}
               selectedIds={selectedDrawingIds}
@@ -94,18 +116,14 @@ function App() {
                   if (isCompareMode) {
                     const isAlreadySelected = currentIds.includes(drawing.id);
                     if (isAlreadySelected) {
-                      // Remove if already selected
                       return currentIds.filter((id) => id !== drawing.id);
                     } else {
-                      // Add if not selected, up to max 4
                       if (currentIds.length < 4) {
                         return [...currentIds, drawing.id];
                       }
-                      // If already 4, replace the last one
                       return [...currentIds.slice(1), drawing.id];
                     }
                   } else {
-                    // Not in compare mode, only one selection allowed
                     return [drawing.id];
                   }
                 });
@@ -114,10 +132,12 @@ function App() {
           </div>
         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto' }}> {/* Corrected: Main drawing viewer area with scroll, and padding */}
+        <div style={{ flex: 1, overflowY: 'auto' }}>
           <DrawingViewer
             drawings={allSelectedDrawingObjs}
             isCompareMode={isCompareMode}
+            revisionHistory={revisionHistory}
+            primaryDrawing={primaryDrawing} // Pass primaryDrawing
           />
         </div>
       </div>

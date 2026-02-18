@@ -9,8 +9,11 @@ const normalizeFilename = (filename: string): string => {
   return filename.normalize('NFD');
 };
 
-export const useMetadata = (): ProcessedData | null => {
-  const [processedData, setProcessedData] = useState<ProcessedData | null>(null);
+// Update the return type to include raw metadata
+type UseMetadataResult = (ProcessedData & { rawMetadata: Metadata }) | null;
+
+export const useMetadata = (): UseMetadataResult => {
+  const [processedData, setProcessedData] = useState<UseMetadataResult>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -97,10 +100,10 @@ export const useMetadata = (): ProcessedData | null => {
           return a.localeCompare(b);
         });
 
-        setProcessedData({ disciplines: sortedDisciplines, drawings });
+        setProcessedData({ disciplines: sortedDisciplines, drawings, rawMetadata: metadata });
       } catch (error) {
         console.error("Failed to load or process metadata:", error);
-        setProcessedData({ disciplines: [ALL_DISCIPLINES], drawings: [] }); // Provide a minimal fallback
+        setProcessedData({ disciplines: [ALL_DISCIPLINES], drawings: [], rawMetadata: { project: { name: '', unit: '' }, disciplines: [], drawings: {} } }); // Provide a minimal fallback
       }
     };
 
