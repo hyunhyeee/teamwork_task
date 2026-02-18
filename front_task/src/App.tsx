@@ -1,27 +1,28 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react'; // Import useEffect
 import { useMetadata } from './hooks/useMetadata';
 import { DisciplineSelector } from './components/DisciplineSelector';
 import { DrawingList } from './components/DrawingList';
 import { DrawingViewer } from './components/DrawingViewer';
 import { ContextHeader } from './components/ContextHeader';
+import { RevisionHistory } from './components/RevisionHistory'; // Import RevisionHistory
 import type { AppDrawing, DrawingMeta, DisciplineData } from './types/drawing';
 
 const ALL_DISCIPLINES = '전체';
 
 function App() {
-  const processedData = useMetadata();
+  const processedData = useMetadata(); // Hook 1
 
   const [selectedDiscipline, setSelectedDiscipline] =
-    useState<string>(ALL_DISCIPLINES);
-  const [selectedDrawingIds, setSelectedDrawingIds] = useState<string[]>([]);
-  const [isCompareMode, setIsCompareMode] = useState<boolean>(false);
+    useState<string>(ALL_DISCIPLINES); // Hook 2
+  const [selectedDrawingIds, setSelectedDrawingIds] = useState<string[]>([]); // Hook 3
+  const [isCompareMode, setIsCompareMode] = useState<boolean>(false); // Hook 4
 
-  const disciplines = useMemo(() => {
+  const disciplines = useMemo(() => { // Hook 5
     return processedData?.disciplines || [ALL_DISCIPLINES];
   }, [processedData]);
 
-  const filteredDrawings = useMemo(() => {
-    if (!processedData) return [];
+  const filteredDrawings = useMemo(() => { // Hook 6
+    if (!processedData) return []; // Handle null processedData gracefully
     if (selectedDiscipline === ALL_DISCIPLINES) {
       return processedData.drawings;
     }
@@ -30,16 +31,32 @@ function App() {
     );
   }, [processedData, selectedDiscipline]);
 
-  const allSelectedDrawingObjs = useMemo(() => {
-    if (!processedData || selectedDrawingIds.length === 0) return [];
+  // Effect to filter selectedDrawingIds when filteredDrawings changes
+  useEffect(() => {
+    setSelectedDrawingIds((currentIds) => {
+      // Keep only those IDs that are still present in the current filteredDrawings
+      const validIds = currentIds.filter(id =>
+        filteredDrawings.some(drawing => drawing.id === id)
+      );
+      // If no drawings are selected but there are filtered drawings, select the first one by default
+      if (validIds.length === 0 && filteredDrawings.length > 0) {
+        return [filteredDrawings[0].id];
+      }
+      return validIds;
+    });
+  }, [filteredDrawings]); // Rerun when filteredDrawings changes
+
+  const allSelectedDrawingObjs = useMemo(() => { // Hook 7
+    if (!processedData || selectedDrawingIds.length === 0) return []; // Handle null processedData or empty selection
     return selectedDrawingIds
       .map((id) => processedData.drawings.find((drawing) => drawing.id === id))
       .filter((drawing): drawing is AppDrawing => drawing !== undefined);
   }, [processedData, selectedDrawingIds]);
 
-  const primaryDrawing = allSelectedDrawingObjs[0] || null;
+  const primaryDrawing = allSelectedDrawingObjs[0] || null; // Not a hook, derived state
 
-  const revisionHistory = useMemo(() => {
+  // Re-introduced revisionHistory useMemo
+  const revisionHistory = useMemo(() => { // Hook 8
     if (!processedData || !primaryDrawing || !processedData.rawMetadata) return [];
 
     const rawDrawings = processedData.rawMetadata.drawings;
@@ -64,7 +81,7 @@ function App() {
     return [];
   }, [processedData, primaryDrawing]);
 
-  const handleToggleCompareMode = () => {
+  const handleToggleCompareMode = () => { // Not a hook, event handler
     setIsCompareMode((prev) => {
       if (prev) {
         setSelectedDrawingIds((currentIds) => currentIds.slice(0, 1));
@@ -73,6 +90,7 @@ function App() {
     });
   };
 
+  // Conditional rendering MUST come after all hooks are called unconditionally
   if (!processedData) return <div>Loading metadata...</div>;
 
   return (
@@ -89,6 +107,7 @@ function App() {
         height: 'calc(100vh - 60px)',
         display: 'flex',
       }}>
+        {/* Left Sidebar */}
         <div style={{
           width: 250,
           borderRight: '1px solid #ddd',
@@ -101,7 +120,7 @@ function App() {
               selected={selectedDiscipline}
               onSelect={(name) => {
                 setSelectedDiscipline(name);
-                setSelectedDrawingIds([]);
+                // setSelectedDrawingIds([]); // Removed: maintain selections
               }}
             />
           </div>
@@ -132,13 +151,19 @@ function App() {
           </div>
         </div>
 
+        {/* Middle Drawing Viewer Area */}
         <div style={{ flex: 1, overflowY: 'auto' }}>
           <DrawingViewer
             drawings={allSelectedDrawingObjs}
             isCompareMode={isCompareMode}
-            revisionHistory={revisionHistory}
-            primaryDrawing={primaryDrawing} // Pass primaryDrawing
+            // rawMetadata is no longer passed to DrawingViewer
+            // primaryDrawing is no longer passed to DrawingViewer
           />
+        </div>
+
+        {/* Right Revision History Sidebar */}
+        <div style={{ flex: '0 0 300px', height: '100%', borderLeft: '1px solid #ddd', overflowY: 'auto' }}>
+          <RevisionHistory revisions={revisionHistory} primaryDrawing={primaryDrawing} />
         </div>
       </div>
     </div>

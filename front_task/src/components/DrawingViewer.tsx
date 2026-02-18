@@ -1,22 +1,22 @@
-import React, { useState } from 'react';
-import type { AppDrawing, Revision } from '../types/drawing';
-import { RevisionHistory } from './RevisionHistory';
+import React, { useState } from 'react'; // Removed useMemo
+import type { AppDrawing } from '../types/drawing'; // Removed Revision, Metadata, DrawingMeta, DisciplineData
+// Removed RevisionHistory import as it's no longer used internally
 
 interface Props {
   drawings: AppDrawing[];
   isCompareMode: boolean;
-  revisionHistory: Revision[];
-  primaryDrawing: AppDrawing | null; // Added primaryDrawing prop
+  // Removed primaryDrawing prop
+  // Removed rawMetadata prop
 }
 
-export const DrawingViewer = ({ drawings, isCompareMode, revisionHistory, primaryDrawing }: Props) => {
+export const DrawingViewer = ({ drawings, isCompareMode }: Props) => { // Removed primaryDrawing, rawMetadata from destructuring
   const [zoomLevel, setZoomLevel] = useState(1); // Global zoom level for the viewer
 
   const toggleGlobalZoom = () => {
     setZoomLevel((prevZoom) => (prevZoom === 1 ? 1.5 : 1)); // Toggle between 1x and 1.5x zoom
   };
 
-  if (drawings.length === 0) {
+  if (drawings.length === 0) { // Removed !primaryDrawing check
     return (
       <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         도면을 선택하세요.
@@ -51,8 +51,8 @@ export const DrawingViewer = ({ drawings, isCompareMode, revisionHistory, primar
     );
   };
 
-  // Main drawing content (without the revision history sidebar)
-  let mainDrawingContent;
+  // Main drawing content area
+  let drawingAreaContent;
   if (isCompareMode && drawings.length > 0) {
     const rows = [];
     let currentRow = [];
@@ -66,7 +66,7 @@ export const DrawingViewer = ({ drawings, isCompareMode, revisionHistory, primar
 
     const rowHeight = rows.length === 1 ? '100%' : '50%';
 
-    mainDrawingContent = (
+    drawingAreaContent = (
       <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%' }}>
         {rows.map((row, rowIndex) => (
           <div key={rowIndex} style={{ display: 'flex', flex: 1, width: '100%', height: rowHeight, overflow: 'hidden', justifyContent: 'center' }}>
@@ -84,46 +84,39 @@ export const DrawingViewer = ({ drawings, isCompareMode, revisionHistory, primar
       </div>
     );
   } else if (drawings.length > 0) {
-    mainDrawingContent = (
+    drawingAreaContent = (
       <div style={{ width: '100%', height: '100%', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         {renderDrawing(drawings[0], '100%')}
       </div>
     );
   } else {
-    mainDrawingContent = null;
+    drawingAreaContent = null;
   }
 
   return (
-    <div style={{ display: 'flex', width: '100%', height: '100%', overflow: 'hidden' }}> {/* Outer flex container for main content + sidebar */}
+    <div // Removed outer flex container for main content + sidebar
+      style={{
+        width: '100%',
+        height: '100%',
+        overflow: 'auto', // Allow panning when zoomed
+        cursor: zoomLevel === 1 ? 'zoom-in' : 'zoom-out', // Indicate zoomable state
+      }}
+      onDoubleClick={toggleGlobalZoom}
+    >
       <div
         style={{
-          flex: 1, // Main drawing area takes remaining space
+          width: '100%',
           height: '100%',
-          overflow: 'auto', // Allow panning when zoomed
-          cursor: zoomLevel === 1 ? 'zoom-in' : 'zoom-out', // Indicate zoomable state
+          transform: `scale(${zoomLevel})`,
+          transformOrigin: 'top left',
+          transition: 'transform 0.2s ease-in-out',
+          display: 'flex',
+          flexDirection: 'column',
+          minWidth: zoomLevel === 1 ? 'initial' : `${zoomLevel * 100}%`,
+          minHeight: zoomLevel === 1 ? 'initial' : `${zoomLevel * 100}%`,
         }}
-        onDoubleClick={toggleGlobalZoom}
       >
-        <div
-          style={{
-            width: '100%',
-            height: '100%',
-            transform: `scale(${zoomLevel})`,
-            transformOrigin: 'top left',
-            transition: 'transform 0.2s ease-in-out',
-            display: 'flex',
-            flexDirection: 'column',
-            minWidth: zoomLevel === 1 ? 'initial' : `${zoomLevel * 100}%`,
-            minHeight: zoomLevel === 1 ? 'initial' : `${zoomLevel * 100}%`,
-          }}
-        >
-          {mainDrawingContent}
-        </div>
-      </div>
-      
-      {/* Fixed Revision History Sidebar */}
-      <div style={{ flex: '0 0 300px', height: '100%', borderLeft: '1px solid #ddd', overflowY: 'auto' }}>
-        <RevisionHistory revisions={revisionHistory} primaryDrawing={primaryDrawing} />
+        {drawingAreaContent}
       </div>
     </div>
   );

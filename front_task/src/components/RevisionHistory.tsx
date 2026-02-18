@@ -3,7 +3,7 @@ import type { Revision, AppDrawing } from '../types/drawing';
 
 interface Props {
   revisions: Revision[];
-  primaryDrawing: AppDrawing | null; // Added primaryDrawing prop
+  primaryDrawing: AppDrawing | null;
 }
 
 export const RevisionHistory = ({ revisions, primaryDrawing }: Props) => {
@@ -24,8 +24,8 @@ export const RevisionHistory = ({ revisions, primaryDrawing }: Props) => {
   }
 
   return (
-    <div style={{ padding: 16, borderLeft: '1px solid #ddd', overflowY: 'auto', flex: '1 1 auto' }}> {/* flex: 1 1 auto to allow it to grow */}
-      <h3>{primaryDrawing.name} 변경 이력</h3> {/* Display name of primary drawing */}
+    <div style={{ padding: 16, borderLeft: '1px solid #ddd', overflowY: 'auto', flex: '1 1 auto' }}>
+      <h3>{primaryDrawing.name} 변경 이력</h3>
       {revisions.map((rev, index) => (
         <div key={rev.version + index} style={{ marginBottom: 20, borderBottom: '1px dashed #eee', paddingBottom: 10 }}>
           <h4>{rev.version} ({rev.date})</h4>
