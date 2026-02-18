@@ -12,7 +12,6 @@ npm run dev
 - Vite 7.3.1 (Build Tool)
 - ESLint + Prettier (Code Quality)
 - Airbnb ESLint Style Guide
-- Yarn Berry (v4)
 
 ## 구현 기능
 

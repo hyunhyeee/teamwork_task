@@ -15,11 +15,9 @@ function App() {
     useState<string>(ALL_DISCIPLINES); // Default to "전체"
   const [selectedDrawingId, setSelectedDrawingId] =
     useState<string | null>(null);
-
-  // Reset selected drawing when discipline changes
-  useEffect(() => {
-    setSelectedDrawingId(null);
-  }, [selectedDiscipline]);
+  const [isCompareMode, setIsCompareMode] = useState<boolean>(false);
+  const [selectedDrawingForComparisonId, setSelectedDrawingForComparisonId] =
+    useState<string | null>(null);
 
   const disciplines = useMemo(() => {
     return processedData?.disciplines || [ALL_DISCIPLINES];
@@ -43,35 +41,89 @@ function App() {
     return foundDrawing === undefined ? null : foundDrawing;
   }, [processedData, selectedDrawingId]);
 
+  const selectedDrawingForComparisonObj = useMemo(() => {
+    if (!processedData || !selectedDrawingForComparisonId) return null;
+    const foundDrawing = processedData.drawings.find(
+      (drawing) => drawing.id === selectedDrawingForComparisonId,
+    );
+    return foundDrawing === undefined ? null : foundDrawing;
+  }, [processedData, selectedDrawingForComparisonId]);
+
+  const handleToggleCompareMode = () => {
+    setIsCompareMode((prev) => {
+      // If turning off compare mode, reset the comparison drawing
+      if (prev) {
+        setSelectedDrawingForComparisonId(null);
+      }
+      return !prev;
+    });
+  };
+
   if (!processedData) return <div>Loading metadata...</div>;
 
   return (
-    <div>
+    <div style={{ width: '100%' }}>
       <ContextHeader
         discipline={selectedDrawingObj?.discipline ?? null}
         drawingName={selectedDrawingObj?.name ?? null}
+        isCompareMode={isCompareMode}
+        onToggleCompareMode={handleToggleCompareMode}
       />
 
-      <div style={{ display: 'flex', height: 'calc(100vh - 60px)' }}>
-        <div style={{ width: 250, padding: 16, borderRight: '1px solid #ddd' }}>
-          <DisciplineSelector
-            disciplines={disciplines}
-            selected={selectedDiscipline}
-            onSelect={(name) => {
-              setSelectedDiscipline(name);
-            }}
-          />
+      <div style={{
+        marginTop: '60px', // Corrected: Space for the fixed header
+        height: 'calc(100vh - 60px)', // Added: Remaining height
+        display: 'flex',
+      }}>
+        <div style={{ // This is the overall sidebar container
+          width: 250, // Corrected: Fixed width for the sidebar, as discussed
+          borderRight: '1px solid #ddd',
+          display: 'flex',
+          flexDirection: 'column',
+        }}>
+          {/* Discipline Selector Section */}
+          <div style={{ padding: 16, paddingBottom: 0 }}> {/* Top padding */}
+            <DisciplineSelector
+              disciplines={disciplines}
+              selected={selectedDiscipline}
+              onSelect={(name) => {
+                setSelectedDiscipline(name);
+              }}
+            />
+          </div>
 
-          <DrawingList
-            drawings={filteredDrawings}
-            selectedId={selectedDrawingId}
-            onSelect={(drawing) => setSelectedDrawingId(drawing.id)}
-          />
+          {/* Drawing List Section (scrollable) */}
+          <div style={{ flex: 1, padding: 16, paddingTop: 0, overflowY: 'auto' }}> {/* Bottom padding, scrollable */}
+            <DrawingList
+              drawings={filteredDrawings}
+              selectedId={selectedDrawingId}
+              selectedCompareId={selectedDrawingForComparisonId}
+              isCompareMode={isCompareMode}
+              onSelect={(drawing) => {
+                if (isCompareMode) {
+                  // If compare mode is active
+                  if (selectedDrawingId === null || selectedDrawingId === drawing.id) {
+                    setSelectedDrawingId(drawing.id);
+                    setSelectedDrawingForComparisonId(null);
+                  } else if (selectedDrawingForComparisonId === drawing.id) {
+                    setSelectedDrawingForComparisonId(null);
+                  } else if (drawing.id !== selectedDrawingId) {
+                    setSelectedDrawingForComparisonId(drawing.id);
+                  }
+                } else {
+                  setSelectedDrawingId(drawing.id);
+                  setSelectedDrawingForComparisonId(null);
+                }
+              }}
+            />
+          </div>
         </div>
 
-        <div style={{ flex: 1, padding: 16 }}>
+        <div style={{ flex: 1, overflowY: 'auto' }}> {/* Corrected: Main drawing viewer area with scroll, and padding */}
           <DrawingViewer
             drawing={selectedDrawingObj}
+            compareDrawing={selectedDrawingForComparisonObj}
+            isCompareMode={isCompareMode}
           />
         </div>
       </div>
