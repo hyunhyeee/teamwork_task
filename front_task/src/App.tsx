@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState } from 'react';
 import { useMetadata } from './hooks/useMetadata';
 import { DisciplineSelector } from './components/DisciplineSelector';
 import { DrawingList } from './components/DrawingList';
@@ -13,11 +13,8 @@ function App() {
 
   const [selectedDiscipline, setSelectedDiscipline] =
     useState<string>(ALL_DISCIPLINES); // Default to "전체"
-  const [selectedDrawingId, setSelectedDrawingId] =
-    useState<string | null>(null);
+  const [selectedDrawingIds, setSelectedDrawingIds] = useState<string[]>([]);
   const [isCompareMode, setIsCompareMode] = useState<boolean>(false);
-  const [selectedDrawingForComparisonId, setSelectedDrawingForComparisonId] =
-    useState<string | null>(null);
 
   const disciplines = useMemo(() => {
     return processedData?.disciplines || [ALL_DISCIPLINES];
@@ -33,27 +30,18 @@ function App() {
     );
   }, [processedData, selectedDiscipline]);
 
-  const selectedDrawingObj = useMemo(() => {
-    if (!processedData || !selectedDrawingId) return null;
-    const foundDrawing = processedData.drawings.find(
-      (drawing) => drawing.id === selectedDrawingId,
-    );
-    return foundDrawing === undefined ? null : foundDrawing;
-  }, [processedData, selectedDrawingId]);
-
-  const selectedDrawingForComparisonObj = useMemo(() => {
-    if (!processedData || !selectedDrawingForComparisonId) return null;
-    const foundDrawing = processedData.drawings.find(
-      (drawing) => drawing.id === selectedDrawingForComparisonId,
-    );
-    return foundDrawing === undefined ? null : foundDrawing;
-  }, [processedData, selectedDrawingForComparisonId]);
+  const allSelectedDrawingObjs = useMemo(() => {
+    if (!processedData || selectedDrawingIds.length === 0) return [];
+    return selectedDrawingIds
+      .map((id) => processedData.drawings.find((drawing) => drawing.id === id))
+      .filter((drawing): drawing is AppDrawing => drawing !== undefined);
+  }, [processedData, selectedDrawingIds]);
 
   const handleToggleCompareMode = () => {
     setIsCompareMode((prev) => {
-      // If turning off compare mode, reset the comparison drawing
+      // If turning off compare mode, reset the comparison drawings to only the first one
       if (prev) {
-        setSelectedDrawingForComparisonId(null);
+        setSelectedDrawingIds((currentIds) => currentIds.slice(0, 1));
       }
       return !prev;
     });
@@ -61,11 +49,13 @@ function App() {
 
   if (!processedData) return <div>Loading metadata...</div>;
 
+  const primaryDrawing = allSelectedDrawingObjs[0] || null;
+
   return (
     <div style={{ width: '100%' }}>
       <ContextHeader
-        discipline={selectedDrawingObj?.discipline ?? null}
-        drawingName={selectedDrawingObj?.name ?? null}
+        discipline={primaryDrawing?.discipline ?? null}
+        drawingName={primaryDrawing?.name ?? null}
         isCompareMode={isCompareMode}
         onToggleCompareMode={handleToggleCompareMode}
       />
@@ -88,6 +78,7 @@ function App() {
               selected={selectedDiscipline}
               onSelect={(name) => {
                 setSelectedDiscipline(name);
+                setSelectedDrawingIds([]); // Clear selections when discipline changes
               }}
             />
           </div>
@@ -96,24 +87,28 @@ function App() {
           <div style={{ flex: 1, padding: 16, paddingTop: 0, overflowY: 'auto' }}> {/* Bottom padding, scrollable */}
             <DrawingList
               drawings={filteredDrawings}
-              selectedId={selectedDrawingId}
-              selectedCompareId={selectedDrawingForComparisonId}
+              selectedIds={selectedDrawingIds}
               isCompareMode={isCompareMode}
               onSelect={(drawing) => {
-                if (isCompareMode) {
-                  // If compare mode is active
-                  if (selectedDrawingId === null || selectedDrawingId === drawing.id) {
-                    setSelectedDrawingId(drawing.id);
-                    setSelectedDrawingForComparisonId(null);
-                  } else if (selectedDrawingForComparisonId === drawing.id) {
-                    setSelectedDrawingForComparisonId(null);
-                  } else if (drawing.id !== selectedDrawingId) {
-                    setSelectedDrawingForComparisonId(drawing.id);
+                setSelectedDrawingIds((currentIds) => {
+                  if (isCompareMode) {
+                    const isAlreadySelected = currentIds.includes(drawing.id);
+                    if (isAlreadySelected) {
+                      // Remove if already selected
+                      return currentIds.filter((id) => id !== drawing.id);
+                    } else {
+                      // Add if not selected, up to max 4
+                      if (currentIds.length < 4) {
+                        return [...currentIds, drawing.id];
+                      }
+                      // If already 4, replace the last one
+                      return [...currentIds.slice(1), drawing.id];
+                    }
+                  } else {
+                    // Not in compare mode, only one selection allowed
+                    return [drawing.id];
                   }
-                } else {
-                  setSelectedDrawingId(drawing.id);
-                  setSelectedDrawingForComparisonId(null);
-                }
+                });
               }}
             />
           </div>
@@ -121,8 +116,7 @@ function App() {
 
         <div style={{ flex: 1, overflowY: 'auto' }}> {/* Corrected: Main drawing viewer area with scroll, and padding */}
           <DrawingViewer
-            drawing={selectedDrawingObj}
-            compareDrawing={selectedDrawingForComparisonObj}
+            drawings={allSelectedDrawingObjs}
             isCompareMode={isCompareMode}
           />
         </div>

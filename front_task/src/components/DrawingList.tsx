@@ -1,15 +1,14 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { AppDrawing } from '../types/drawing';
 
 interface Props {
   drawings: AppDrawing[];
-  selectedId: string | null;
-  selectedCompareId: string | null; // New prop for the comparison drawing
-  isCompareMode: boolean; // New prop to indicate if compare mode is active
+  selectedIds: string[]; // Changed to an array of selected IDs
+  isCompareMode: boolean;
   onSelect: (drawing: AppDrawing) => void;
 }
 
-export const DrawingList = ({ drawings, selectedId, selectedCompareId, isCompareMode, onSelect }: Props) => {
+export const DrawingList = ({ drawings, selectedIds, isCompareMode, onSelect }: Props) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const toggleCollapse = () => {
@@ -33,19 +32,20 @@ export const DrawingList = ({ drawings, selectedId, selectedCompareId, isCompare
             let backgroundColor = '#ddd';
             let color = '#000';
 
-            if (isCompareMode) {
-              if (selectedId === drawing.id) {
+            const isSelected = selectedIds.includes(drawing.id);
+            const isPrimarySelected = selectedIds[0] === drawing.id;
+
+            if (isCompareMode && isSelected) {
+              if (isPrimarySelected) {
                 backgroundColor = '#4CAF50'; // Green for primary selected in compare mode
                 color = '#fff';
-              } else if (selectedCompareId === drawing.id) {
+              } else {
                 backgroundColor = '#2196F3'; // Blue for comparison selected
                 color = '#fff';
               }
-            } else {
-              if (selectedId === drawing.id) {
-                backgroundColor = '#444'; // Original selected color
-                color = '#fff';
-              }
+            } else if (!isCompareMode && isPrimarySelected) {
+              backgroundColor = '#444'; // Original selected color
+              color = '#fff';
             }
 
             return (
@@ -57,11 +57,12 @@ export const DrawingList = ({ drawings, selectedId, selectedCompareId, isCompare
                   marginBottom: 8,
                   background: backgroundColor,
                   color: color,
-                  width: '100%', // Make buttons full width
-                  textAlign: 'left', // Align text to the left
-                  padding: '8px 12px', // Add some padding
-                  border: 'none', // Remove default button border
-                  cursor: 'pointer', // Indicate it's clickable
+                  width: '100%',
+                  textAlign: 'left',
+                  padding: '8px 12px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontWeight: isSelected ? 'bold' : 'normal', // Bold for selected items
                 }}
               >
                 {drawing.name}
