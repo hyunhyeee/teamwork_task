@@ -4,8 +4,9 @@
 
 ## 실행 방법
 
-npm install
-npm run dev
+1. cd front_task
+2. npm install
+3. npm run dev
 
 ## 기술 스택
 
