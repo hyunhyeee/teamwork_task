@@ -107,14 +107,11 @@ function App() {
 
   return (
     <div style={{ 
-      width: '100vw', 
+      width: '100%', 
       height: '100vh',
-      overflow: 'hidden',
       display: 'flex',
       flexDirection: 'column',
-      position: 'fixed',
-      top: 0,
-      left: 0
+      overflow: 'hidden'
     }}>
       <ContextHeader
         discipline={primaryDrawing?.discipline ?? null}
@@ -127,20 +124,17 @@ function App() {
         marginTop: '60px',
         flex: 1,
         display: 'flex',
-        width: '100%',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        width: '100%'
       }}>
         {/* Left Sidebar */}
         <div style={{
           width: '250px',
-          minWidth: '250px',
-          maxWidth: '250px',
           flex: '0 0 250px',
           borderRight: '1px solid #ddd',
           display: 'flex',
           flexDirection: 'column',
           backgroundColor: '#fff',
-          boxSizing: 'border-box'
         }}>
           <div style={{ padding: 16, paddingBottom: 0 }}>
             <DisciplineSelector
@@ -183,9 +177,8 @@ function App() {
           flex: 1,
           minWidth: 0,
           height: '100%',
-          overflow: 'hidden',
           position: 'relative',
-          display: 'flex'
+          overflow: 'hidden'
         }}>
           <DrawingViewer
             drawings={allSelectedDrawingObjs}
@@ -196,14 +189,11 @@ function App() {
         {/* Right Revision History Sidebar */}
         <div style={{
           width: '300px',
-          minWidth: '300px',
-          maxWidth: '300px',
           flex: '0 0 300px',
           height: '100%',
           borderLeft: '1px solid #ddd',
           overflowY: 'auto',
           backgroundColor: '#fff',
-          boxSizing: 'border-box'
         }}>
           <RevisionHistory revisions={revisionHistory} primaryDrawing={primaryDrawing} />
         </div>

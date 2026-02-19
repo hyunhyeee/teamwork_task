@@ -1,22 +1,59 @@
-import React, { useState } from 'react'; // Removed useMemo
-import type { AppDrawing } from '../types/drawing'; // Removed Revision, Metadata, DrawingMeta, DisciplineData
-// Removed RevisionHistory import as it's no longer used internally
+import React, { useState, useRef } from 'react'; // Added useRef
+import type { AppDrawing } from '../types/drawing';
 
 interface Props {
   drawings: AppDrawing[];
   isCompareMode: boolean;
-  // Removed primaryDrawing prop
-  // Removed rawMetadata prop
 }
 
-export const DrawingViewer = ({ drawings, isCompareMode }: Props) => { // Removed primaryDrawing, rawMetadata from destructuring
-  const [zoomLevel, setZoomLevel] = useState(1); // Global zoom level for the viewer
+export const DrawingViewer = ({ drawings, isCompareMode }: Props) => {
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const viewerRef = useRef<HTMLDivElement>(null); // Ref for the scrollable container
+  
+  // States for dragging
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [startY, setStartY] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+  const [scrollTop, setScrollTop] = useState(0);
 
   const toggleGlobalZoom = () => {
-    setZoomLevel((prevZoom) => (prevZoom === 1 ? 1.5 : 1)); // Toggle between 1x and 1.5x zoom
+    setZoomLevel((prevZoom) => (prevZoom === 1 ? 1.5 : 1));
   };
 
-  if (drawings.length === 0) { // Removed !primaryDrawing check
+  // Drag handlers
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (zoomLevel === 1 || !viewerRef.current) return;
+    
+    setIsDragging(true);
+    setStartX(e.pageX - viewerRef.current.offsetLeft);
+    setStartY(e.pageY - viewerRef.current.offsetTop);
+    setScrollLeft(viewerRef.current.scrollLeft);
+    setScrollTop(viewerRef.current.scrollTop);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !viewerRef.current) return;
+    
+    e.preventDefault();
+    const x = e.pageX - viewerRef.current.offsetLeft;
+    const y = e.pageY - viewerRef.current.offsetTop;
+    const walkX = (x - startX) * 1.5; // Scroll speed multiplier
+    const walkY = (y - startY) * 1.5;
+    
+    viewerRef.current.scrollLeft = scrollLeft - walkX;
+    viewerRef.current.scrollTop = scrollTop - walkY;
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseLeave = () => {
+    setIsDragging(false);
+  };
+
+  if (drawings.length === 0) {
     return (
       <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         도면을 선택하세요.
@@ -24,19 +61,19 @@ export const DrawingViewer = ({ drawings, isCompareMode }: Props) => { // Remove
     );
   }
 
-  // renderDrawing function accepts displayWidth
   const renderDrawing = (d: AppDrawing, displayWidth: string = '100%') => {
     const imageUrl = `/data/drawings/${d.imageFile}`;
     return (
       <div
         style={{
-          flex: 'none', // Prevent flex: 1 from expanding indefinitely
-          width: displayWidth, // Explicitly set width
+          flex: 'none',
+          width: displayWidth,
           textAlign: 'center',
           display: 'flex',
           flexDirection: 'column',
           height: '100%',
-          overflow: 'hidden', // Main container for the drawing
+          overflow: 'hidden',
+          userSelect: 'none', // Prevent text selection while dragging
         }}
       >
         <h3 style={{ margin: '10px 0' }}>{d.name}</h3>
@@ -44,6 +81,7 @@ export const DrawingViewer = ({ drawings, isCompareMode }: Props) => { // Remove
             <img
               src={imageUrl}
               alt={d.name}
+              draggable={false} // Prevent default ghost image dragging
               style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
             />
         </div>
@@ -94,29 +132,34 @@ export const DrawingViewer = ({ drawings, isCompareMode }: Props) => { // Remove
   }
 
   return (
-    <div // Removed outer flex container for main content + sidebar
+    <div
+      ref={viewerRef}
       style={{
         width: '100%',
         height: '100%',
-        overflow: 'auto', // Allow panning when zoomed
-        cursor: zoomLevel === 1 ? 'zoom-in' : 'zoom-out', // Indicate zoomable state
+        overflow: 'auto', // native scrollbars will appear
+        cursor: zoomLevel === 1 ? 'zoom-in' : (isDragging ? 'grabbing' : 'grab'),
+        userSelect: 'none',
+        backgroundColor: '#f5f5f5'
       }}
       onDoubleClick={toggleGlobalZoom}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseLeave}
     >
       <div
         style={{
-          width: '100%',
-          height: '100%',
-          transform: `scale(${zoomLevel})`,
-          transformOrigin: 'top left',
-          transition: 'transform 0.2s ease-in-out',
+          width: zoomLevel === 1 ? '100%' : '150%', // increase size to trigger scroll
+          height: zoomLevel === 1 ? '100%' : '150%',
           display: 'flex',
           flexDirection: 'column',
-          minWidth: zoomLevel === 1 ? 'initial' : `${zoomLevel * 100}%`,
-          minHeight: zoomLevel === 1 ? 'initial' : `${zoomLevel * 100}%`,
+          transition: 'width 0.2s ease, height 0.2s ease',
         }}
       >
-        {drawingAreaContent}
+        <div style={{ flex: 1, display: 'flex', width: '100%', height: '100%' }}>
+          {drawingAreaContent}
+        </div>
       </div>
     </div>
   );
