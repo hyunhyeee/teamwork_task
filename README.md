@@ -2,6 +2,9 @@
 
 건설 도면 탐색 플랫폼
 
+## 깃허브 주소
+https://github.com/hyunhyeee/teamwork_task.git
+
 ## 실행 방법
 
 1. cd front_task
