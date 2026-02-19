@@ -84,6 +84,7 @@ export const useMetadata = (): UseMetadataResult => {
                         name: `${dwg.name} (${disciplineName} ${regionKey} ${rev.version})`,
                         discipline: disciplineName,
                         imageFile: normalizeFilename(rev.image), // Apply normalization
+                        regionKey: regionKey, // Added regionKey
                       });
                     }
                   }

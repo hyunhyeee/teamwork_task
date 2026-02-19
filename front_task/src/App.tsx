@@ -66,17 +66,29 @@ function App() {
 
     if (fullDrawingMeta && fullDrawingMeta.disciplines) {
       const disciplineData: DisciplineData | undefined = fullDrawingMeta.disciplines[primaryDrawing.discipline];
-      if (disciplineData && disciplineData.revisions) {
-        return disciplineData.revisions;
+      
+      if (!disciplineData) return [];
+
+      // 1. If a specific region is selected, show only that region's revisions
+      if (primaryDrawing.regionKey && disciplineData.regions?.[primaryDrawing.regionKey]) {
+        return disciplineData.regions[primaryDrawing.regionKey].revisions || [];
       }
-      if (disciplineData && disciplineData.regions) {
-        for (const regionKey in disciplineData.regions) {
-          const region = disciplineData.regions[regionKey];
-          if (region && region.revisions) {
-            return region.revisions;
+
+      // 2. Otherwise, collect discipline-level revisions
+      const revisions = [...(disciplineData.revisions || [])];
+
+      // 3. If no discipline-level revisions, aggregate from all regions
+      if (revisions.length === 0 && disciplineData.regions) {
+        Object.values(disciplineData.regions).forEach(region => {
+          if (region.revisions) {
+            revisions.push(...region.revisions);
           }
-        }
+        });
+        // Return aggregated revisions in the order they were added (following regions and then versions)
+        return revisions;
       }
+
+      return revisions;
     }
     return [];
   }, [processedData, primaryDrawing]);

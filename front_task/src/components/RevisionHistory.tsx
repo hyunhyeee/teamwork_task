@@ -24,7 +24,7 @@ export const RevisionHistory = ({ revisions, primaryDrawing }: Props) => {
   }
 
   return (
-    <div style={{ padding: 16, borderLeft: '1px solid #ddd', overflowY: 'auto', flex: '1 1 auto' }}>
+    <div style={{ padding: 15, borderLeft: '1px solid #ddd', overflowY: 'auto', flex: '1 1 auto' }}>
       <h3>{primaryDrawing.name} 변경 이력</h3>
       {revisions.map((rev, index) => (
         <div key={rev.version + index} style={{ marginBottom: 20, borderBottom: '1px dashed #eee', paddingBottom: 10 }}>

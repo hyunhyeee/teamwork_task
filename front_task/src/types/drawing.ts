@@ -75,6 +75,7 @@ export interface AppDrawing {
   name: string; // Display name (e.g., "101동 지상1층 평면도 (건축 REV1)")
   discipline: string; // Discipline name (e.g., "건축")
   imageFile: string; // The actual image file name (e.g., "02_101동 지상1층 평면도_건축_REV1.jpeg")
+  regionKey?: string; // Optional: The key of the region if the drawing is region-specific
 }
 
 export interface ProcessedData {
