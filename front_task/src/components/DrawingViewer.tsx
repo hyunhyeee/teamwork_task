@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'; // Added useRef
+import React, { useState, useRef } from 'react';
 import type { AppDrawing } from '../types/drawing';
 
 interface Props {
@@ -8,9 +8,7 @@ interface Props {
 
 export const DrawingViewer = ({ drawings, isCompareMode }: Props) => {
   const [zoomLevel, setZoomLevel] = useState(1);
-  const viewerRef = useRef<HTMLDivElement>(null); // Ref for the scrollable container
-  
-  // States for dragging
+  const viewerRef = useRef<HTMLDivElement>(null); //도면 뷰어
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [startY, setStartY] = useState(0);
@@ -18,10 +16,9 @@ export const DrawingViewer = ({ drawings, isCompareMode }: Props) => {
   const [scrollTop, setScrollTop] = useState(0);
 
   const toggleGlobalZoom = () => {
-    setZoomLevel((prevZoom) => (prevZoom === 1 ? 1.5 : 1));
+    setZoomLevel((prevZoom) => (prevZoom === 1 ? 1.5 : 1)); // 줌 확대 1.5배로
   };
 
-  // Drag handlers
   const handleMouseDown = (e: React.MouseEvent) => {
     if (zoomLevel === 1 || !viewerRef.current) return;
     
@@ -38,7 +35,7 @@ export const DrawingViewer = ({ drawings, isCompareMode }: Props) => {
     e.preventDefault();
     const x = e.pageX - viewerRef.current.offsetLeft;
     const y = e.pageY - viewerRef.current.offsetTop;
-    const walkX = (x - startX) * 1.5; // Scroll speed multiplier
+    const walkX = (x - startX) * 1.5;
     const walkY = (y - startY) * 1.5;
     
     viewerRef.current.scrollLeft = scrollLeft - walkX;
@@ -55,7 +52,7 @@ export const DrawingViewer = ({ drawings, isCompareMode }: Props) => {
 
   if (drawings.length === 0) {
     return (
-      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div>
         도면을 선택하세요.
       </div>
     );
@@ -73,7 +70,7 @@ export const DrawingViewer = ({ drawings, isCompareMode }: Props) => {
           flexDirection: 'column',
           height: '100%',
           overflow: 'hidden',
-          userSelect: 'none', // Prevent text selection while dragging
+          userSelect: 'none', //드래그 시 텍스트 선택 방지
         }}
       >
         <h3 style={{ margin: '10px 0' }}>{d.name}</h3>
@@ -81,7 +78,7 @@ export const DrawingViewer = ({ drawings, isCompareMode }: Props) => {
             <img
               src={imageUrl}
               alt={d.name}
-              draggable={false} // Prevent default ghost image dragging
+              draggable={false} // 확대 안했을 때 드래그 방지
               style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
             />
         </div>
@@ -89,13 +86,15 @@ export const DrawingViewer = ({ drawings, isCompareMode }: Props) => {
     );
   };
 
-  // Main drawing content area
+  // 메인 도면 표시
   let drawingAreaContent;
+  // 비교모드 일 때
   if (isCompareMode && drawings.length > 0) {
     const rows = [];
     let currentRow = [];
     for (let i = 0; i < drawings.length; i++) {
       currentRow.push(drawings[i]);
+      // 비교 모드일 때 한 행에 2개씩 배치
       if (currentRow.length === 2 || i === drawings.length - 1) {
         rows.push(currentRow);
         currentRow = [];
@@ -104,6 +103,7 @@ export const DrawingViewer = ({ drawings, isCompareMode }: Props) => {
 
     const rowHeight = rows.length === 1 ? '100%' : '50%';
 
+    // 도면 레이아웃 표시
     drawingAreaContent = (
       <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%' }}>
         {rows.map((row, rowIndex) => (
@@ -121,13 +121,13 @@ export const DrawingViewer = ({ drawings, isCompareMode }: Props) => {
         ))}
       </div>
     );
-  } else if (drawings.length > 0) {
+  } else if (drawings.length > 0) { // 일반 모드 일 때
     drawingAreaContent = (
       <div style={{ width: '100%', height: '100%', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         {renderDrawing(drawings[0], '100%')}
       </div>
     );
-  } else {
+  } else { // 도면이 없을 때
     drawingAreaContent = null;
   }
 
@@ -137,7 +137,7 @@ export const DrawingViewer = ({ drawings, isCompareMode }: Props) => {
       style={{
         width: '100%',
         height: '100%',
-        overflow: 'auto', // native scrollbars will appear
+        overflow: 'auto',
         cursor: zoomLevel === 1 ? 'zoom-in' : (isDragging ? 'grabbing' : 'grab'),
         userSelect: 'none',
         backgroundColor: '#f5f5f5'
@@ -150,7 +150,7 @@ export const DrawingViewer = ({ drawings, isCompareMode }: Props) => {
     >
       <div
         style={{
-          width: zoomLevel === 1 ? '100%' : '150%', // increase size to trigger scroll
+          width: zoomLevel === 1 ? '100%' : '150%',
           height: zoomLevel === 1 ? '100%' : '150%',
           display: 'flex',
           flexDirection: 'column',

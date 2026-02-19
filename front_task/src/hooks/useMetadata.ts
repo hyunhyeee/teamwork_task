@@ -3,13 +3,12 @@ import type { Metadata, DrawingMeta, AppDrawing, ProcessedData } from '../types/
 
 const ALL_DISCIPLINES = '전체';
 
-// Helper function to normalize filenames
+// 파일명 정규화를 위한 헬퍼 함수
 const normalizeFilename = (filename: string): string => {
-  // Apply NFD normalization to handle decomposed Unicode characters (like Korean jamo)
   return filename.normalize('NFD');
 };
 
-// Update the return type to include raw metadata
+// raw metadata를 포함하도록 반환 타입 확장
 type UseMetadataResult = (ProcessedData & { rawMetadata: Metadata }) | null;
 
 export const useMetadata = (): UseMetadataResult => {
@@ -18,28 +17,27 @@ export const useMetadata = (): UseMetadataResult => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('/data/metadata.json');
+        const response = await fetch('/data/metadata.json'); // 메타데이터 파일 요청
         if (!response.ok) {
           throw new Error('Network response was not ok');
         }
         const metadata: Metadata = await response.json();
         
         const uniqueDisciplines = new Set<string>();
-        uniqueDisciplines.add(ALL_DISCIPLINES); // Add "전체" as the first discipline
+        uniqueDisciplines.add(ALL_DISCIPLINES);
 
         const drawings: AppDrawing[] = [];
 
         for (const dwgId in metadata.drawings) {
           const dwg: DrawingMeta = metadata.drawings[dwgId];
 
-          // Handle top-level drawing image if no specific disciplines are defined or if it's a general drawing
           if (dwg.image && !dwg.disciplines) {
             drawings.push({
               id: `${dwg.id}-base`,
               drawingId: dwg.id,
               name: dwg.name,
-              discipline: ALL_DISCIPLINES, // Assign to "전체" or a generic discipline
-              imageFile: normalizeFilename(dwg.image), // Apply normalization
+              discipline: ALL_DISCIPLINES,
+              imageFile: normalizeFilename(dwg.image),
             });
           }
 
@@ -48,18 +46,18 @@ export const useMetadata = (): UseMetadataResult => {
               uniqueDisciplines.add(disciplineName);
               const discData = dwg.disciplines[disciplineName];
 
-              // Handle discipline-specific base image
+              // 공종별 기본(base) 이미지 처리
               if (discData?.image) {
                 drawings.push({
                   id: `${dwg.id}-${disciplineName}-base`,
                   drawingId: dwg.id,
                   name: `${dwg.name} (${disciplineName})`,
                   discipline: disciplineName,
-                  imageFile: normalizeFilename(discData.image), // Apply normalization
+                  imageFile: normalizeFilename(discData.image),
                 });
               }
 
-              // Handle revisions within a discipline
+              // 공종 내부에 존재하는 revision(버전) 처리
               if (discData?.revisions) {
                 for (const rev of discData.revisions) {
                   drawings.push({
@@ -67,12 +65,12 @@ export const useMetadata = (): UseMetadataResult => {
                     drawingId: dwg.id,
                     name: `${dwg.name} (${disciplineName} ${rev.version})`,
                     discipline: disciplineName,
-                    imageFile: normalizeFilename(rev.image), // Apply normalization
+                    imageFile: normalizeFilename(rev.image),
                   });
                 }
               }
 
-              // Handle regions within a discipline and their revisions
+              // 공종 내부의 region(구역) 및 해당 구역의 revision 처리
               if (discData?.regions) {
                 for (const regionKey in discData.regions) {
                   const region = discData.regions[regionKey];
@@ -83,8 +81,8 @@ export const useMetadata = (): UseMetadataResult => {
                         drawingId: dwg.id,
                         name: `${dwg.name} (${disciplineName} ${regionKey} ${rev.version})`,
                         discipline: disciplineName,
-                        imageFile: normalizeFilename(rev.image), // Apply normalization
-                        regionKey: regionKey, // Added regionKey
+                        imageFile: normalizeFilename(rev.image),
+                        regionKey: regionKey,
                       });
                     }
                   }
@@ -94,7 +92,6 @@ export const useMetadata = (): UseMetadataResult => {
           }
         }
         
-        // Sort disciplines alphabetically, keeping "전체" at the top
         const sortedDisciplines = Array.from(uniqueDisciplines).sort((a, b) => {
           if (a === ALL_DISCIPLINES) return -1;
           if (b === ALL_DISCIPLINES) return 1;

@@ -1,3 +1,5 @@
+// 상단 현재 선택된 공종과 도면 이름이 띄워지는 헤더 영역
+
 interface Props {
   discipline: string | null;
   drawingName: string | null;

@@ -1,3 +1,5 @@
+// 왼쪽 사이드바에서 공종 선택 영역
+
 import { useState } from 'react';
 
 interface Props {
@@ -36,7 +38,7 @@ export const DisciplineSelector = ({
               onClick={() => onSelect(name)}
               style={{
                 display: 'block',
-                width: '100%', // Added for uniform width
+                width: '100%',
                 marginBottom: 8,
                 background: selected === name ? '#333' : '#eee',
                 color: selected === name ? '#fff' : '#000',

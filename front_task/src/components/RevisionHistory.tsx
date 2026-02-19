@@ -1,4 +1,4 @@
-// front_task/src/components/RevisionHistory.tsx
+// 오른쪽 도면 변경 이력을 추적할 수 있는 사이드바 영역
 import type { Revision, AppDrawing } from '../types/drawing';
 
 interface Props {

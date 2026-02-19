@@ -1,28 +1,28 @@
-import { useMemo, useState, useEffect } from 'react'; // Import useEffect
+import { useMemo, useState, useEffect } from 'react';
 import { useMetadata } from './hooks/useMetadata';
 import { DisciplineSelector } from './components/DisciplineSelector';
 import { DrawingList } from './components/DrawingList';
 import { DrawingViewer } from './components/DrawingViewer';
 import { ContextHeader } from './components/ContextHeader';
-import { RevisionHistory } from './components/RevisionHistory'; // Import RevisionHistory
+import { RevisionHistory } from './components/RevisionHistory';
 import type { AppDrawing, DrawingMeta, DisciplineData } from './types/drawing';
 
 const ALL_DISCIPLINES = '전체';
 
 function App() {
-  const processedData = useMetadata(); // Hook 1
+  const processedData = useMetadata(); // 메타데이터 불러오기
 
   const [selectedDiscipline, setSelectedDiscipline] =
-    useState<string>(ALL_DISCIPLINES); // Hook 2
-  const [selectedDrawingIds, setSelectedDrawingIds] = useState<string[]>([]); // Hook 3
-  const [isCompareMode, setIsCompareMode] = useState<boolean>(false); // Hook 4
+    useState<string>(ALL_DISCIPLINES); // 현재 선택한 공종
+  const [selectedDrawingIds, setSelectedDrawingIds] = useState<string[]>([]); // 현재 선택된 도면id
+  const [isCompareMode, setIsCompareMode] = useState<boolean>(false); // 비교모드 on/off
 
-  const disciplines = useMemo(() => { // Hook 5
+  const disciplines = useMemo(() => { // 공종 목록
     return processedData?.disciplines || [ALL_DISCIPLINES];
   }, [processedData]);
 
-  const filteredDrawings = useMemo(() => { // Hook 6
-    if (!processedData) return []; // Handle null processedData gracefully
+  const filteredDrawings = useMemo(() => { // 도면 필터링
+    if (!processedData) return [];
     if (selectedDiscipline === ALL_DISCIPLINES) {
       return processedData.drawings;
     }
@@ -31,32 +31,31 @@ function App() {
     );
   }, [processedData, selectedDiscipline]);
 
-  // Effect to filter selectedDrawingIds when filteredDrawings changes
+  // 공종 바뀌어도 기존 선택한 도면 화면에 유지
   useEffect(() => {
     setSelectedDrawingIds((currentIds) => {
-      // Keep only those IDs that are still present in the current filteredDrawings
       const validIds = currentIds.filter(id =>
         filteredDrawings.some(drawing => drawing.id === id)
       );
-      // If no drawings are selected but there are filtered drawings, select the first one by default
       if (validIds.length === 0 && filteredDrawings.length > 0) {
         return [filteredDrawings[0].id];
       }
       return validIds;
     });
-  }, [filteredDrawings]); // Rerun when filteredDrawings changes
+  }, [filteredDrawings]);
 
-  const allSelectedDrawingObjs = useMemo(() => { // Hook 7
-    if (!processedData || selectedDrawingIds.length === 0) return []; // Handle null processedData or empty selection
+  // 선택한 도면을 따라 실제 도면 반환
+  const allSelectedDrawingObjs = useMemo(() => {
+    if (!processedData || selectedDrawingIds.length === 0) return [];
     return selectedDrawingIds
       .map((id) => processedData.drawings.find((drawing) => drawing.id === id))
       .filter((drawing): drawing is AppDrawing => drawing !== undefined);
   }, [processedData, selectedDrawingIds]);
 
-  const primaryDrawing = allSelectedDrawingObjs[0] || null; // Not a hook, derived state
+  const primaryDrawing = allSelectedDrawingObjs[0] || null;
 
-  // Re-introduced revisionHistory useMemo
-  const revisionHistory = useMemo(() => { // Hook 8
+  // 도면 데이터가 없다면 빈 배열 반환
+  const revisionHistory = useMemo(() => {
     if (!processedData || !primaryDrawing || !processedData.rawMetadata) return [];
 
     const rawDrawings = processedData.rawMetadata.drawings;
@@ -69,22 +68,21 @@ function App() {
       
       if (!disciplineData) return [];
 
-      // 1. If a specific region is selected, show only that region's revisions
+      // 1. 특정 region이 있으면 반환
       if (primaryDrawing.regionKey && disciplineData.regions?.[primaryDrawing.regionKey]) {
         return disciplineData.regions[primaryDrawing.regionKey].revisions || [];
       }
 
-      // 2. Otherwise, collect discipline-level revisions
+      // 2. discipline 레벨 수집
       const revisions = [...(disciplineData.revisions || [])];
 
-      // 3. If no discipline-level revisions, aggregate from all regions
+      // 3.discipline 레벨도 없는 경우 모든 region의 revision을 하나로 모아서 반환
       if (revisions.length === 0 && disciplineData.regions) {
         Object.values(disciplineData.regions).forEach(region => {
           if (region.revisions) {
             revisions.push(...region.revisions);
           }
         });
-        // Return aggregated revisions in the order they were added (following regions and then versions)
         return revisions;
       }
 
@@ -93,7 +91,7 @@ function App() {
     return [];
   }, [processedData, primaryDrawing]);
 
-  const handleToggleCompareMode = () => { // Not a hook, event handler
+  const handleToggleCompareMode = () => {
     setIsCompareMode((prev) => {
       if (prev) {
         setSelectedDrawingIds((currentIds) => currentIds.slice(0, 1));
@@ -101,9 +99,6 @@ function App() {
       return !prev;
     });
   };
-
-  // Conditional rendering MUST come after all hooks are called unconditionally
-  if (!processedData) return <div>Loading metadata...</div>;
 
   return (
     <div style={{ 
@@ -127,10 +122,10 @@ function App() {
         overflow: 'hidden',
         width: '100%'
       }}>
-        {/* Left Sidebar */}
+        {/* 왼쪽 선택 사이드바 조정 */}
         <div style={{
-          width: '250px',
-          flex: '0 0 250px',
+          width: '300px',
+          flex: '0 0 300px',
           borderRight: '1px solid #ddd',
           display: 'flex',
           flexDirection: 'column',
@@ -172,10 +167,9 @@ function App() {
           </div>
         </div>
 
-        {/* Middle Drawing Viewer Area */}
+        {/* 중앙 도면 사진 조정 */}
         <div style={{ 
           flex: 1,
-          minWidth: 0,
           height: '100%',
           position: 'relative',
           overflow: 'hidden'
@@ -186,10 +180,10 @@ function App() {
           />
         </div>
 
-        {/* Right Revision History Sidebar */}
+        {/* 오른쪽 변경이력 사이드바 조정 */}
         <div style={{
           width: '300px',
-          flex: '0 0 300px',
+          flex: '0 0 400px',
           height: '100%',
           borderLeft: '1px solid #ddd',
           overflowY: 'auto',

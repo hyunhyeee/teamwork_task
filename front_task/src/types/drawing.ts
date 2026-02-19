@@ -1,3 +1,4 @@
+// 도면 메타데이터 구조를 타입으로 정의
 export interface Project {
   name: string;
   unit: string;
@@ -48,7 +49,7 @@ export interface DisciplineData {
 export interface DrawingMeta {
   id: string;
   name: string;
-  image?: string; // Top-level image for the drawing
+  image?: string;
   parent: string | null;
   position?: {
     vertices: number[][];
@@ -67,18 +68,16 @@ export interface Metadata {
   };
 }
 
-// --- Types for processed data in the application ---
-
 export interface AppDrawing {
-  id: string; // Unique ID for each displayable drawing (e.g., drawingId-disciplineName-version)
-  drawingId: string; // Original drawing ID from metadata
-  name: string; // Display name (e.g., "101동 지상1층 평면도 (건축 REV1)")
-  discipline: string; // Discipline name (e.g., "건축")
-  imageFile: string; // The actual image file name (e.g., "02_101동 지상1층 평면도_건축_REV1.jpeg")
-  regionKey?: string; // Optional: The key of the region if the drawing is region-specific
+  id: string;
+  drawingId: string;
+  name: string
+  discipline: string;
+  imageFile: string;
+  regionKey?: string;
 }
 
 export interface ProcessedData {
-  disciplines: string[]; // List of unique discipline names, including "전체"
-  drawings: AppDrawing[]; // Flattened list of all displayable drawings
+  disciplines: string[];
+  drawings: AppDrawing[];
 }

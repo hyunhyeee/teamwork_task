@@ -1,9 +1,11 @@
+// 왼쪽 사이드바에서 도면 목록 선택 영역
+
 import { useState } from 'react';
 import type { AppDrawing } from '../types/drawing';
 
 interface Props {
   drawings: AppDrawing[];
-  selectedIds: string[]; // Changed to an array of selected IDs
+  selectedIds: string[];
   isCompareMode: boolean;
   onSelect: (drawing: AppDrawing) => void;
 }
@@ -37,14 +39,14 @@ export const DrawingList = ({ drawings, selectedIds, isCompareMode, onSelect }: 
 
             if (isCompareMode && isSelected) {
               if (isPrimarySelected) {
-                backgroundColor = '#4CAF50'; // Green for primary selected in compare mode
+                backgroundColor = '#4CAF50'; // 비교모드에서 기본 값
                 color = '#fff';
               } else {
-                backgroundColor = '#2196F3'; // Blue for comparison selected
+                backgroundColor = '#2196F3'; // 비교보드에서 비교 값
                 color = '#fff';
               }
             } else if (!isCompareMode && isPrimarySelected) {
-              backgroundColor = '#444'; // Original selected color
+              backgroundColor = '#444'; // 일반모드에서 기본 값
               color = '#fff';
             }
 
@@ -62,7 +64,7 @@ export const DrawingList = ({ drawings, selectedIds, isCompareMode, onSelect }: 
                   padding: '8px 12px',
                   border: 'none',
                   cursor: 'pointer',
-                  fontWeight: isSelected ? 'bold' : 'normal', // Bold for selected items
+                  fontWeight: isSelected ? 'bold' : 'normal',
                 }}
               >
                 {drawing.name}

@@ -1,9 +1,9 @@
-// front_task/src/utils/revisionHelpers.ts
-import type { AppDrawing, Revision, Metadata, DrawingMeta, DisciplineData } from '../types/drawing';
 
-// Helper function to extract revisions for a given AppDrawing
+import type { AppDrawing, Revision, Metadata, DrawingMeta } from '../types/drawing';
+
+// 특정 AppDrawing에 대한 revision 이력을 추출하는 헬퍼 함수
 export const getRevisionHistoryForDrawing = (
-  drawing: AppDrawing | null, // Can be null
+  drawing: AppDrawing | null,
   rawMetadata: Metadata | null
 ): Revision[] => {
   if (!rawMetadata || !drawing) return [];
@@ -15,18 +15,16 @@ export const getRevisionHistoryForDrawing = (
   const disciplineData = fullDrawingMeta.disciplines[drawing.discipline];
   if (!disciplineData) return [];
 
-  // Prioritize revisions directly under the discipline
   if (disciplineData.revisions) {
     return disciplineData.revisions;
   }
 
-  // If not found, check regions. We need to parse primaryDrawing.id
-  // Example AppDrawing.id: "01-구조-regionB-REV2B"
+  // region을 확인
   const appDrawingIdParts = drawing.id.split('-');
   const regionKeyIndex = appDrawingIdParts.indexOf('region');
   
   if (regionKeyIndex > -1 && disciplineData.regions) {
-      const regionKey = appDrawingIdParts[regionKeyIndex + 1]; // e.g., 'B' for 'regionB'
+      const regionKey = appDrawingIdParts[regionKeyIndex + 1];
       const region = disciplineData.regions[regionKey];
       if (region && region.revisions) {
           return region.revisions;
