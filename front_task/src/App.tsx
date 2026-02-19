@@ -106,7 +106,16 @@ function App() {
   if (!processedData) return <div>Loading metadata...</div>;
 
   return (
-    <div style={{ width: '100%' }}>
+    <div style={{ 
+      width: '100vw', 
+      height: '100vh',
+      overflow: 'hidden',
+      display: 'flex',
+      flexDirection: 'column',
+      position: 'fixed',
+      top: 0,
+      left: 0
+    }}>
       <ContextHeader
         discipline={primaryDrawing?.discipline ?? null}
         drawingName={primaryDrawing?.name ?? null}
@@ -116,15 +125,22 @@ function App() {
 
       <div style={{
         marginTop: '60px',
-        height: 'calc(100vh - 60px)',
+        flex: 1,
         display: 'flex',
+        width: '100%',
+        overflow: 'hidden'
       }}>
         {/* Left Sidebar */}
         <div style={{
-          width: 250,
+          width: '250px',
+          minWidth: '250px',
+          maxWidth: '250px',
+          flex: '0 0 250px',
           borderRight: '1px solid #ddd',
           display: 'flex',
           flexDirection: 'column',
+          backgroundColor: '#fff',
+          boxSizing: 'border-box'
         }}>
           <div style={{ padding: 16, paddingBottom: 0 }}>
             <DisciplineSelector
@@ -132,7 +148,6 @@ function App() {
               selected={selectedDiscipline}
               onSelect={(name) => {
                 setSelectedDiscipline(name);
-                // setSelectedDrawingIds([]); // Removed: maintain selections
               }}
             />
           </div>
@@ -164,17 +179,32 @@ function App() {
         </div>
 
         {/* Middle Drawing Viewer Area */}
-        <div style={{ flex: 1, overflowY: 'auto' }}>
+        <div style={{ 
+          flex: 1,
+          minWidth: 0,
+          height: '100%',
+          overflow: 'hidden',
+          position: 'relative',
+          display: 'flex'
+        }}>
           <DrawingViewer
             drawings={allSelectedDrawingObjs}
             isCompareMode={isCompareMode}
-            // rawMetadata is no longer passed to DrawingViewer
-            // primaryDrawing is no longer passed to DrawingViewer
           />
         </div>
 
         {/* Right Revision History Sidebar */}
-        <div style={{ flex: '0 0 300px', height: '100%', borderLeft: '1px solid #ddd', overflowY: 'auto' }}>
+        <div style={{
+          width: '300px',
+          minWidth: '300px',
+          maxWidth: '300px',
+          flex: '0 0 300px',
+          height: '100%',
+          borderLeft: '1px solid #ddd',
+          overflowY: 'auto',
+          backgroundColor: '#fff',
+          boxSizing: 'border-box'
+        }}>
           <RevisionHistory revisions={revisionHistory} primaryDrawing={primaryDrawing} />
         </div>
       </div>
